@@ -1,37 +1,65 @@
-
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
+import numpy as np
 
-app = FastAPI(title="SkillBridge AI Recommendation Engine")
+app = FastAPI(title="SkillBridge AI - Recommendation Engine")
 
-class Skill(BaseModel):
+# Enable CORS for Express and Vite
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class StudentSkill(BaseModel):
     name: str
-    current: float
-    required: float
-    weight: float = 1.0
+    proficiency: float
+
+class JobRequirement(BaseModel):
+    skill: str
+    required_level: float
 
 class MatchRequest(BaseModel):
-    skills: List[Skill]
+    student_skills: List[StudentSkill]
+    job_requirements: List[JobRequirement]
 
-def score(skills):
-    total_w = sum(max(s.weight, 0.1) for s in skills) or 1
-    weighted = sum(min(s.current / max(s.required,1), 1) * max(s.weight,0.1) for s in skills)
-    return round(100 * weighted / total_w, 1)
+@app.post("/api/ai/match")
+def calculate_match(data: MatchRequest):
+    student_map = {s.name.lower(): s.proficiency for s.student_skills in [data.student_skills] for s in student_skills}
+    
+    total_weight = 0
+    acquired_weight = 0
+    roadmaps = []
 
-@app.get("/health")
-def health():
-    return {"status":"ok","engine":"SkillBridge AI v3"}
+    for req in data.job_requirements:
+        skill_key = req.skill.lower()
+        req_level = req.required_level
+        total_weight += req_level
+        
+        current_level = student_map.get(skill_key, 0)
+        acquired_weight += min(current_level, req_level)
+        
+        gap = max(0, req_level - current_level)
+        if gap > 0:
+            roadmaps.append({
+                "skill": req.skill,
+                "gap": round(gap, 1),
+                "current": current_level,
+                "required": req_level
+            })
 
-@app.post("/match")
-def match(req: MatchRequest):
-    missing, weak = [], []
-    for s in req.skills:
-        gap = max(s.required - s.current, 0)
-        if s.current <= 0:
-            missing.append({"skill":s.name,"gap":round(gap,1),"priority":round(gap*max(s.weight,1),1)})
-        elif s.current < s.required:
-            weak.append({"skill":s.name,"current":s.current,"required":s.required,"gap":round(gap,1),
-                         "priority":round(gap*max(s.weight,1),1)})
-    roadmap = sorted(missing + weak, key=lambda x:x["priority"], reverse=True)[:5]
-    return {"score":score(req.skills),"missing_skills":missing,"weak_skills":weak,"roadmap":roadmap}
+    # Overall Match Score Calculation (%)
+    match_score = round((acquired_weight / total_weight * 100), 1) if total_weight > 0 else 0
+
+    return {
+        "match_score": match_score,
+        "skill_gaps": roadmaps
+    }
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
