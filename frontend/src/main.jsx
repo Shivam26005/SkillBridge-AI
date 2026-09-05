@@ -120,6 +120,592 @@ function Login({ onLogin }) {
   );
 }
 
+function SignUp({ onLogin, onBack , onLoginPage }) {
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'student',
+    department: ''
+  });
+
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  function handleChange(e) {
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value
+    });
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError('');
+
+    if (
+      !form.name ||
+      !form.email ||
+      !form.password ||
+      !form.confirmPassword
+    ) {
+      setError('Please fill all required fields.');
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const d = await api('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          role: form.role,
+          department: form.department
+        })
+      });
+
+      localStorage.setItem('token', d.token);
+      localStorage.setItem('user', JSON.stringify(d.user));
+
+      onLogin(d.user);
+
+    } catch (err) {
+      setError(err.message || 'Registration failed.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="auth-page">
+
+      <div className="auth-card">
+
+        <button
+          className="back-home"
+          onClick={onBack}
+        >
+          ← Back to Home
+        </button>
+
+        <div className="auth-header">
+          <div className="auth-logo">SB</div>
+
+          <h1>Create your SkillBridge account</h1>
+
+          <p>
+            Join the platform connecting skills,
+            education and opportunities.
+          </p>
+        </div>
+
+        {error && (
+          <div className="auth-error">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+
+          <label>Full Name</label>
+
+          <input
+            type="text"
+            name="name"
+            placeholder="Enter your full name"
+            value={form.name}
+            onChange={handleChange}
+          />
+
+          <label>Email</label>
+
+          <input
+            type="email"
+            name="email"
+            placeholder="Enter your email"
+            value={form.email}
+            onChange={handleChange}
+          />
+
+          <label>I am a</label>
+
+          <select
+            name="role"
+            value={form.role}
+            onChange={handleChange}
+          >
+            <option value="student">Student</option>
+            <option value="industry">Industry</option>
+            <option value="faculty">Faculty</option>
+            <option value="institution">Institution</option>
+          </select>
+
+          <label>Department / Organization</label>
+
+          <input
+            type="text"
+            name="department"
+            placeholder="Optional"
+            value={form.department}
+            onChange={handleChange}
+          />
+
+          <label>Password</label>
+
+          <input
+            type="password"
+            name="password"
+            placeholder="Create a password"
+            value={form.password}
+            onChange={handleChange}
+          />
+
+          <label>Confirm Password</label>
+
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm your password"
+            value={form.confirmPassword}
+            onChange={handleChange}
+          />
+
+          <button
+            type="submit"
+            className="auth-submit"
+            disabled={loading}
+          >
+            {loading ? 'Creating Account...' : 'Create Account'}
+          </button>
+
+        </form>
+
+        <p className="auth-footer">
+          Already have an account?
+          <button
+            type="button"
+            onClick={onLoginPage}
+          >
+            Back to Login
+          </button>
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =========================
+   PUBLIC LANDING PAGE
+========================= */
+
+function LandingPage({ onLogin, onSignUp }) {
+  return (
+    <div className="landing-page">
+
+      {/* NAVBAR */}
+      <nav className="landing-nav">
+        <div className="landing-brand">
+          <span>SB</span>
+          <strong>SkillBridge AI</strong>
+        </div>
+
+        <div className="landing-links">
+          <a href="#home">Home</a>
+          <a href="#how-it-works">How It Works</a>
+          <a href="#features">Features</a>
+          <a href="#roles">For Everyone</a>
+          <a href="#about">About</a>
+        </div>
+
+        <div className="landing-actions">
+          <button
+            className="landing-login"
+            onClick={onLogin}
+          >
+            Login
+          </button>
+
+          <button
+            className="landing-signup"
+            onClick={onSignUp}
+          >
+            Sign Up
+          </button>
+        </div>
+      </nav>
+
+
+      {/* HERO */}
+      <section className="landing-hero" id="home">
+
+        <div className="hero-content">
+
+          <div className="landing-badge">
+            🚀 AI-Powered Skill Intelligence Platform
+          </div>
+
+          <h1>
+            Bridge the Gap Between
+            <span> Skills & Opportunities</span>
+          </h1>
+
+          <p>
+            SkillBridge AI connects students, academia and industry
+            through intelligent skill mapping, personalized learning,
+            internships and placement opportunities.
+          </p>
+
+          <div className="hero-buttons">
+
+            <button
+              className="hero-primary"
+              onClick={onSignUp}
+            >
+              Get Started →
+            </button>
+
+            <button
+              className="hero-secondary"
+              onClick={onLogin}
+            >
+              Explore Platform
+            </button>
+
+          </div>
+
+          <div className="hero-trust">
+            <span>✓ Skill Mapping</span>
+            <span>✓ AI Matching</span>
+            <span>✓ Career Readiness</span>
+          </div>
+
+        </div>
+
+
+        
+
+      </section>
+
+
+      {/* WHY SKILLBRIDGE */}
+      <section className="landing-section" id="features">
+
+        <div className="section-heading">
+
+          <div className="landing-badge">
+            WHY SKILLBRIDGE?
+          </div>
+
+          <h2>
+            One platform. The complete career journey.
+          </h2>
+
+          <p>
+            From identifying skill gaps to discovering the right
+            opportunity, SkillBridge brings the entire ecosystem together.
+          </p>
+
+        </div>
+
+
+        <div className="feature-grid">
+
+          <div className="feature-card">
+            <div className="feature-icon">🎯</div>
+            <h3>AI Skill Mapping</h3>
+            <p>
+              Understand current skills, identify gaps and discover
+              what skills are required for your target career.
+            </p>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon">🤖</div>
+            <h3>AI-Powered Matching</h3>
+            <p>
+              Match student capabilities with relevant internships,
+              projects and industry opportunities.
+            </p>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon">📚</div>
+            <h3>Personalized Learning</h3>
+            <p>
+              Get targeted learning paths based on your skill gaps
+              and career goals.
+            </p>
+          </div>
+
+          <div className="feature-card">
+            <div className="feature-icon">💼</div>
+            <h3>Internships & Placements</h3>
+            <p>
+              Discover relevant opportunities and improve your
+              readiness for real-world careers.
+            </p>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* HOW IT WORKS */}
+      <section className="landing-section workflow-section" id="how-it-works">
+
+        <div className="section-heading">
+
+          <div className="landing-badge">
+            HOW IT WORKS
+          </div>
+
+          <h2>
+            From skills to opportunities
+          </h2>
+
+        </div>
+
+
+        <div className="workflow">
+
+          <div className="workflow-step">
+            <div>01</div>
+            <h3>Assess</h3>
+            <p>Evaluate your current skills and capabilities.</p>
+          </div>
+
+          <div className="workflow-arrow">→</div>
+
+          <div className="workflow-step">
+            <div>02</div>
+            <h3>Analyze</h3>
+            <p>AI identifies your skill gaps and career readiness.</p>
+          </div>
+
+          <div className="workflow-arrow">→</div>
+
+          <div className="workflow-step">
+            <div>03</div>
+            <h3>Learn</h3>
+            <p>Follow a personalized roadmap to close skill gaps.</p>
+          </div>
+
+          <div className="workflow-arrow">→</div>
+
+          <div className="workflow-step">
+            <div>04</div>
+            <h3>Match</h3>
+            <p>Find opportunities aligned with your capabilities.</p>
+          </div>
+
+          <div className="workflow-arrow">→</div>
+
+          <div className="workflow-step">
+            <div>05</div>
+            <h3>Place</h3>
+            <p>Connect with industry for internships and careers.</p>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* ROLES */}
+      <section className="landing-section" id="roles">
+
+        <div className="section-heading">
+
+          <div className="landing-badge">
+            BUILT FOR THE COMPLETE ECOSYSTEM
+          </div>
+
+          <h2>
+            Everyone has a role in the SkillBridge ecosystem.
+          </h2>
+
+        </div>
+
+
+        <div className="role-cards">
+
+          <div className="ecosystem-card">
+            <div className="ecosystem-icon">🎓</div>
+            <h3>Students</h3>
+            <p>
+              Build skills, identify gaps, discover internships
+              and become career-ready.
+            </p>
+          </div>
+
+          <div className="ecosystem-card">
+            <div className="ecosystem-icon">🏢</div>
+            <h3>Industry</h3>
+            <p>
+              Discover skilled candidates and connect with
+              emerging talent.
+            </p>
+          </div>
+
+          <div className="ecosystem-card">
+            <div className="ecosystem-icon">👨‍🏫</div>
+            <h3>Faculty</h3>
+            <p>
+              Collaborate with industry and create programs
+              aligned with real skill demand.
+            </p>
+          </div>
+
+          <div className="ecosystem-card">
+            <div className="ecosystem-icon">🏫</div>
+            <h3>Institutions</h3>
+            <p>
+              Monitor skill trends, student readiness and
+              industry collaboration.
+            </p>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* CAREER GAP SIMULATOR */}
+      <section className="career-section" id="about">
+
+        <div className="career-content">
+
+          <div className="landing-badge">
+            CAREER GAP SIMULATOR
+          </div>
+
+          <h2>
+            Know exactly what stands between you and your dream role.
+          </h2>
+
+          <p>
+            SkillBridge analyzes your current capabilities against
+            industry requirements and turns the gap into an actionable
+            learning roadmap.
+          </p>
+
+          <button
+            className="hero-primary"
+            onClick={onSignUp}
+          >
+            Check Your Readiness →
+          </button>
+
+        </div>
+
+
+        <div className="career-card">
+
+          <div className="career-card-top">
+            <span>Target Role</span>
+            <strong>Full Stack Developer</strong>
+          </div>
+
+          <div className="career-score">
+            <span>Current Readiness</span>
+            <strong>72%</strong>
+          </div>
+
+          <div className="skill-gap">
+
+            <div>
+              <span>React.js</span>
+              <b>85%</b>
+            </div>
+
+            <div className="mini-progress">
+              <span style={{ width: '85%' }}></span>
+            </div>
+
+            <div>
+              <span>Node.js</span>
+              <b>68%</b>
+            </div>
+
+            <div className="mini-progress">
+              <span style={{ width: '68%' }}></span>
+            </div>
+
+            <div>
+              <span>System Design</span>
+              <b>48%</b>
+            </div>
+
+            <div className="mini-progress">
+              <span style={{ width: '48%' }}></span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+      {/* CTA */}
+      <section className="landing-cta">
+
+        <h2>
+          Ready to bridge the gap?
+        </h2>
+
+        <p>
+          Start your journey from skills to meaningful opportunities.
+        </p>
+
+        <button
+          className="hero-primary"
+          onClick={onSignUp}
+        >
+          Create Your Account →
+        </button>
+
+      </section>
+
+
+      {/* FOOTER */}
+      <footer className="landing-footer">
+
+        <div>
+          <div className="landing-brand">
+            <span>SB</span>
+            <strong>SkillBridge AI</strong>
+          </div>
+
+          <p>
+            AI-powered skill mapping for academia, students and industry.
+          </p>
+        </div>
+
+        <div className="footer-links">
+          <span>SIH 2026</span>
+          <span>Skill Intelligence</span>
+          <span>Academia + Industry</span>
+        </div>
+
+      </footer>
+
+    </div>
+  );
+}
 
 /* =========================
    HERO
@@ -280,7 +866,7 @@ function Student() {
 
 
   return (
-    <div>
+    <div className="student-dashboard">
 
       <HeroBanner role="student" />
 
@@ -475,6 +1061,65 @@ function Student() {
         </section>
 
       )}
+
+      {tab === 'opportunities' && (
+        <div className="dashboard-page">
+
+          <div className="page-heading">
+            <span className="page-label">AI CAREER MATCHING</span>
+            <h2>Recommended Opportunities</h2>
+            <p>
+              Opportunities matched with your skills, proficiency and career goals.
+            </p>
+          </div>
+
+          {recs.length > 0 ? (
+            <div className="opportunity-grid">
+              {recs.map((job) => (
+                <div className="portal-opportunity" key={job.id}>
+
+                  <div className="opportunity-top">
+                    <div>
+                      <h3>{job.title}</h3>
+                      <p>{job.company}</p>
+                    </div>
+
+                    <div className="match-score">
+                      {job.match_score}%
+                      <small>AI Match</small>
+                    </div>
+                  </div>
+
+                  <p className="opportunity-description">
+                    {job.description}
+                  </p>
+
+                  <div className="opportunity-details">
+                    <span>📍 {job.location}</span>
+                    <span>💰 {job.stipend}</span>
+                  </div>
+
+                  <button className="primary">
+                    View Opportunity
+                  </button>
+
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <h3>No recommendations yet</h3>
+              <p>
+                Complete your profile and skill assessment to receive
+                AI-powered opportunities.
+              </p>
+            </div>
+          )}
+
+        </div>
+      )}
+
+      
 
 
       {/* =========================
@@ -1686,34 +2331,91 @@ function Institution() {
 ========================= */
 
 function App() {
-
   const [user, setUser] = useState(
-    JSON.parse(
-      localStorage.getItem('user') || 'null'
-    )
+    JSON.parse(localStorage.getItem('user') || 'null')
   );
 
+  const [page, setPage] = useState(
+    localStorage.getItem('user')
+      ? 'dashboard'
+      : 'landing'
+  );
 
-  if (!user) {
-    return <Login onLogin={setUser} />;
+  function openLogin() {
+    setPage('login');
   }
 
+
+
+  function openSignUp() {
+    setPage('signup');
+  }
+
+  function openLanding() {
+    setPage('landing');
+  }
+
+  function handleLogin(loggedInUser) {
+    setUser(loggedInUser);
+    setPage('dashboard');
+  }
 
   function out() {
-
     localStorage.clear();
-
     setUser(null);
-
+    setPage('landing');
   }
 
+  /* Public Landing Page */
+  if (!user && page === 'landing') {
+    return (
+      <LandingPage
+        onLogin={openLogin}
+        onSignUp={openSignUp}
+      />
+    );
+  }
 
+  /* Login Page */
+  if (!user && page === 'login') {
+    return (
+      <div>
+        <button
+          className="back-home"
+          onClick={openLanding}
+        >
+          ← Back to Home
+        </button>
+
+        <Login onLogin={handleLogin} />
+
+        <div className="auth-switch">
+          Don't have an account?{' '}
+          <button onClick={openSignUp}>
+            Sign Up
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* Sign Up Page */
+  if (!user && page === 'signup') {
+    return (
+      <SignUp
+        onLogin={handleLogin}
+        onBack={openLanding}
+        onLoginPage={openLogin}
+      />
+    );
+  }
+
+  /* Dashboard */
   return (
     <Layout
       user={user}
       onLogout={out}
     >
-
       {user.role === 'student' ? (
         <Student />
       ) : user.role === 'industry' ? (
@@ -1723,7 +2425,6 @@ function App() {
       ) : (
         <Institution />
       )}
-
     </Layout>
   );
 }

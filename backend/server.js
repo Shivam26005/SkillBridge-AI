@@ -134,6 +134,99 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // =========================================================================
+// 2. USER REGISTRATION
+// =========================================================================
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const {
+      name,
+      email,
+      password,
+      role,
+      department
+    } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({
+        message: 'Name, email, password and role are required'
+      });
+    }
+
+    // Validate role
+    const allowedRoles = [
+      'student',
+      'industry',
+      'faculty',
+      'institution'
+    ];
+
+    if (!allowedRoles.includes(role)) {
+      return res.status(400).json({
+        message: 'Invalid role'
+      });
+    }
+
+    // Check whether email already exists
+    const existingUser = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({
+        message: 'An account with this email already exists'
+      });
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Create user
+    const result = await pool.query(
+      `INSERT INTO users
+       (name, email, password_hash, role, department)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, email, role, department`,
+      [
+        name,
+        email,
+        passwordHash,
+        role,
+        department || null
+      ]
+    );
+
+    const user = result.rows[0];
+
+    // Create JWT
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role
+      },
+      JWT_SECRET,
+      {
+        expiresIn: '1d'
+      }
+    );
+
+    res.status(201).json({
+      message: 'Account created successfully',
+      token,
+      user
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+
+    res.status(500).json({
+      message: 'Server registration error'
+    });
+  }
+});
+
+// =========================================================================
 // 2. STUDENT DASHBOARD ENDPOINTS
 // =========================================================================
 // Express Route Fallbacks for main.jsx
