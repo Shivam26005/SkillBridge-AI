@@ -494,6 +494,51 @@ app.get('/api/opportunities/recommendations',authenticateToken, async (req, res)
           `AI matching failed for opportunity ${opportunity.id}:`,
           aiErr.message
         );
+
+        // Fallback matching if AI service is temporarily unavailable
+        let totalWeight = 0;
+        let acquiredWeight = 0;
+        const fallbackGaps = [];
+
+        const studentMap = {};
+
+        for (const skill of studentSkills) {
+          studentMap[skill.name.toLowerCase()] = Number(skill.proficiency);
+        }
+
+        for (const req of opportunity.job_requirements) {
+          const required = Number(req.required_level);
+          const current =
+            studentMap[req.skill.toLowerCase()] || 0;
+
+          totalWeight += required;
+          acquiredWeight += Math.min(current, required);
+
+          if (current < required) {
+            fallbackGaps.push({
+              skill: req.skill,
+              gap: Number((required - current).toFixed(1)),
+              current,
+              required
+            });
+          }
+        }
+
+        const fallbackScore =
+          totalWeight > 0
+            ? Number(((acquiredWeight / totalWeight) * 100).toFixed(1))
+            : 0;
+
+        recommendations.push({
+          id: opportunity.id,
+          title: opportunity.title,
+          company: opportunity.company,
+          description: opportunity.description,
+          location: opportunity.location,
+          stipend: opportunity.stipend,
+          match_score: fallbackScore,
+          skill_gaps: fallbackGaps
+        });
       }
     }
 
