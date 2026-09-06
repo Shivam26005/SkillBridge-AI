@@ -365,40 +365,16 @@ app.get('/api/opportunities/recommendations',authenticateToken, async (req, res)
 
     for (const opportunity of Object.values(opportunities)) {
       try {
-        let aiRes;
-        let lastError;
-
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          try {
-            aiRes = await axios.post(
-              `${process.env.AI_SERVICE_URL}/api/ai/match`,
-              {
-                student_skills: studentSkills,
-                job_requirements: opportunity.job_requirements
-              },
-              {
-                timeout: 30000
-              }
-            );
-
-            break;
-          } catch (error) {
-            lastError = error;
-
-            console.log(
-              `AI attempt ${attempt}/3 failed for opportunity ${opportunity.id}:`,
-              error.message
-            );
-
-            if (attempt < 3) {
-              await new Promise(resolve => setTimeout(resolve, 3000));
-            }
+        const aiRes = await axios.post(
+          `${process.env.AI_SERVICE_URL}/api/ai/match`,
+          {
+            student_skills: studentSkills,
+            job_requirements: opportunity.job_requirements
+          },
+          {
+            timeout: 5000
           }
-        }
-
-        if (!aiRes) {
-          throw lastError;
-        }
+        );
 
         const learningMap = {
           Excel: [
